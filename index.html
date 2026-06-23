@@ -6,9 +6,9 @@
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <meta name="apple-mobile-web-app-title" content="DCO Expiry">
+    <meta name="apple-mobile-web-app-title" content="DCO Disp Expiry">
 
-    <title>Direct Chemist Outlet Warralily - Expiry Tracker</title>
+    <title>Direct Chemist Outlet Warralily - Dispensary Expiry Tracker</title>
     
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     
@@ -55,7 +55,7 @@
         }
 
         header h1 { margin: 0; font-size: 24px; }
-        header p { margin: 5px 0 0 0; color: var(--accent-color); font-weight: bold; letter-spacing: 1px; }
+        header p { margin: 5px 0 0 0; color: var(--accent-color); font-weight: bold; letter-spacing: 2px; font-size: 17px; }
 
         .grid {
             display: grid;
@@ -158,13 +158,13 @@
 <div class="container">
     <header>
         <h1>Direct Chemist Outlet</h1>
-        <p>WARRALILY EXPIRY TRACKER</p>
+        <p>💊 DISPENSARY EXPIRY TRACKER 💊</p>
     </header>
 
     <div class="grid">
         <div>
             <div class="card">
-                <h2 id="formTitle">Scan & Log Stock</h2>
+                <h2 id="formTitle">Scan & Log Dispensary Stock</h2>
                 
                 <button type="button" id="scanToggleBtn" class="btn-scan-toggle" onclick="toggleCameraScanner()">📷 Open Camera Scanner</button>
                 
@@ -190,22 +190,22 @@
                         <label for="prodQty">Quantity</label>
                         <input type="number" id="prodQty" min="1" value="1" required>
                     </div>
-                    <button type="submit" id="submitBtn" class="btn-submit">Add to Inventory</button>
+                    <button type="submit" id="submitBtn" class="btn-submit">Add to Dispensary Inventory</button>
                     <button type="button" id="cancelBtn" class="btn-cancel" style="display: none;" onclick="resetFormState()">Cancel Edit</button>
                 </form>
             </div>
 
             <div class="card">
-                <h2>Network Sync Status</h2>
-                <div id="syncStatus" class="status-box" style="background-color: #fff3cd; color: #856404;">⚠️ Connecting to store cloud sync mesh...</div>
+                <h2>Dispensary Sync Status</h2>
+                <div id="syncStatus" class="status-box" style="background-color: #fff3cd; color: #856404;">⚠️ Connecting to dispensary cloud sync mesh...</div>
             </div>
 
             <div class="card">
-                <h2>Product Catalog Core</h2>
+                <h2>Dispensary Catalog Core</h2>
                 <div id="catalogStatus" class="status-box">⏳ Initializing localized indexing engines...</div>
                 
                 <label class="btn-share">
-                    🔄 Sync productlist.XLSX File
+                    🔄 Sync Dispensary XLSX File
                     <input type="file" id="excelLoader" accept=".xlsx" style="display: none;" onchange="loadExcelDatabase(event)">
                 </label>
                 <div id="loaderProgress" style="font-size:12px; color:var(--primary-color); font-weight:bold; display:none; margin-top:5px;"></div>
@@ -213,7 +213,7 @@
         </div>
 
         <div class="card">
-            <h2>Chronological Expiry Report (By Month)</h2>
+            <h2>Chronological Dispensary Expiry Report</h2>
             <div id="expiryReport"></div>
         </div>
     </div>
@@ -225,7 +225,7 @@
     let db = null;
     let html5QrcodeScanner = null;
 
-    // Pluggable Project Configuration Array Modules (Populated with your exact credentials)
+    // Pluggable Project Configuration Using Existing Web Credentials
     const firebaseConfig = {
         apiKey: "AIzaSyBnMBwmgLtgiQ2I6fqg7nS9Qq1dtKNXd2M",
         authDomain: "expiry-date-tracking-323c7.firebaseapp.com",
@@ -240,9 +240,11 @@
     // Initialize Connection Framework
     firebase.initializeApp(firebaseConfig);
     const cloudDatabase = firebase.database();
-    const inventoryDataReference = cloudDatabase.ref("shared_inventory_list");
+    
+    // ISOLATION LAYER: Diverts all read/writes cleanly to a dedicated dispensary dataset node
+    const inventoryDataReference = cloudDatabase.ref("dispensary_inventory_list");
 
-    // Live Event Listeners monitor network data loops instantly
+    // Live Event Listeners monitor dispensary network data loops instantly
     inventoryDataReference.on("value", (snapshot) => {
         const rawCloudData = snapshot.val();
         if (rawCloudData) {
@@ -254,7 +256,7 @@
             inventory = [];
         }
         renderReportView();
-        document.getElementById('syncStatus').innerHTML = "🟢 Connected: Live store network mesh synchronized.";
+        document.getElementById('syncStatus').innerHTML = "🟢 Connected: Dispensary data stream live.";
         document.getElementById('syncStatus').style.background = "#d4edda";
         document.getElementById('syncStatus').style.color = "#155724";
     }, (error) => {
@@ -263,8 +265,8 @@
         document.getElementById('syncStatus').style.color = "#721c24";
     });
 
-    // --- Core IndexedDB Catalog Setup ---
-    const dbOpenRequest = indexedDB.open("DCO_Warralily_MasterDB", 1);
+    // --- Core IndexedDB Dispensary Catalog Setup ---
+    const dbOpenRequest = indexedDB.open("DCO_Warralily_DispensaryDB", 1);
     dbOpenRequest.onupgradeneeded = function(e) {
         let databaseInstance = e.target.result;
         if (!databaseInstance.objectStoreNames.contains("products")) {
@@ -284,14 +286,14 @@
         countQuery.onsuccess = function() {
             const display = document.getElementById('catalogStatus');
             if (countQuery.result > 0) {
-                display.innerHTML = `🟢 Catalog Connected: <strong>${countQuery.result.toLocaleString()}</strong> products synchronized.`;
+                display.innerHTML = `🟢 Catalog Connected: <strong>${countQuery.result.toLocaleString()}</strong> lines indexed.`;
             } else {
-                display.innerHTML = `🔴 No Lookup Catalog Found. Please feed <strong>productlist.XLSX</strong> into the engine below.`;
+                display.innerHTML = `🔴 No Lookup Catalog Found. Feed dispensary layout below.`;
             }
         };
     }
 
-    // --- Native iPad Camera Engine Processing Logic ---
+    // --- Native Camera Engine Processing Logic ---
     function toggleCameraScanner() {
         const cameraBox = document.getElementById('cameraBox');
         const toggleBtn = document.getElementById('scanToggleBtn');
@@ -445,7 +447,7 @@
         if (!finalName || !finalExpiry || isNaN(finalQty)) return;
 
         if (editId) {
-            cloudDatabase.ref("shared_inventory_list/" + editId).set({
+            cloudDatabase.ref("dispensary_inventory_list/" + editId).set({
                 name: finalName,
                 expiry: finalExpiry,
                 qty: finalQty
@@ -470,7 +472,7 @@
         barcodeField.value = '';
         document.getElementById('barcodeMatchStatus').innerHTML = '';
         editId = id;
-        activeTitle.innerText = "Modify Shared Log Target";
+        activeTitle.innerText = "Modify Dispensary Entry";
         commitBtn.innerText = "Commit Global Update";
         abortBtn.style.display = "block";
     }
@@ -478,17 +480,17 @@
     function resetFormState() {
         entryForm.reset();
         editId = null;
-        activeTitle.innerText = "Scan & Log Stock";
-        commitBtn.innerText = "Add to Inventory";
+        activeTitle.innerText = "Scan & Log Dispensary Stock";
+        commitBtn.innerText = "Add to Dispensary Inventory";
         abortBtn.style.display = "none";
         document.getElementById('prodQty').value = 1;
         document.getElementById('barcodeMatchStatus').innerHTML = '';
     }
 
     function deleteItem(id) {
-        if (confirm("Delete this tracking entry across all store computers?")) {
+        if (confirm("Delete this entry across all dispensary screens?")) {
             if (editId === id) resetFormState();
-            cloudDatabase.ref("shared_inventory_list/" + id).remove();
+            cloudDatabase.ref("dispensary_inventory_list/" + id).remove();
         }
     }
 
@@ -496,7 +498,7 @@
     function renderReportView() {
         displayReportArea.innerHTML = '';
         if (inventory.length === 0) {
-            displayReportArea.innerHTML = '<p style="color:#666; font-style:italic;">📭 Live report empty. Scan items to populate database...</p>';
+            displayReportArea.innerHTML = '<p style="color:#666; font-style:italic;">📭 Dispensary logs empty. Scan items to begin...</p>';
             return;
         }
         const mapGroups = {};
